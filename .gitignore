@@ -1,0 +1,26 @@
+# Letöltött program és modellek (a telepítő hozza le)
+ComfyUI_windows_portable/
+_modellek/
+_letoltes/
+ffmpeg/
+
+# Saját munka
+kimenet/
+feladatok/
+
+# Naplók
+*.log
+*_log.txt
+
+# Python
+__pycache__/
+
+# Saját / idegen képek: csak a pelda_kep.jpg kerül fel
+*.png
+*.jpg
+*.jpeg
+*.webp
+!pelda_kep.jpg
+
+# Belső tesztfájlok
+proba_*.json

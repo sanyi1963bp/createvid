@@ -1,0 +1,10 @@
+# Sablon: a telepito.ps1 a kapcsos zárójeles helyőrzőt a _modellek mappa útvonalára cseréli,
+# és ComfyUI_windows_portable\ComfyUI\extra_model_paths.yaml néven menti.
+wan2_2:
+    base_path: {MODELLEK}/
+    diffusion_models: diffusion_models
+    unet: diffusion_models
+    text_encoders: text_encoders
+    clip: text_encoders
+    vae: vae
+    loras: loras
