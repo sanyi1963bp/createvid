@@ -68,6 +68,9 @@ További beállítások (alapértékek a `hosszu_video.py` elején): `klipek_sza
 
 ## Fájlok
 
+Minden fájl részletes leírása magyarul és angolul: [FAJLOK_FILES.md](FAJLOK_FILES.md)
+(English file reference: [FAJLOK_FILES.md#english](FAJLOK_FILES.md#english))
+
 | Fájl | Mire jó |
 |---|---|
 | `Video_keszito.bat` / `video_keszito.py` | Varázsló |
