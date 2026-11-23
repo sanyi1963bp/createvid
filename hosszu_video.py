@@ -129,21 +129,46 @@ def futtat(g):
                 return h[pid]
 
 
-def main():
-    if len(sys.argv) < 2:
+def feladat_valaszt():
+    """Ha nincs megadva feladatfájl: lista a feladatok mappából (legújabb elöl) + a példa."""
+    lista = sorted((ALAP / "feladatok").glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if (ALAP / "pelda_feladat.json").is_file():
+        lista.append(ALAP / "pelda_feladat.json")
+    if not lista:
         raise SystemExit(__doc__)
-    feladat = Path(sys.argv[1]).resolve()
-    c = dict(ALAPERTELMEZES)
-    c.update(json.loads(feladat.read_text(encoding="utf-8")))
-    try:
-        keres("/system_stats")
-    except Exception:
-        raise SystemExit("A ComfyUI nem fut. Indítsd el: ComfyUI_inditas.bat, és várd meg, míg betölt.")
-    ffmpeg_utvonal()  # már az elején kiderüljön, ha hiányzik
+    print("Melyik feladatot futtassam?\n")
+    for i, p in enumerate(lista, 1):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+            n = d.get("klipek_szama") or len(d.get("promptok", []))
+        except Exception:
+            n = "?"
+        print(f"  {i:2d}. {p.stem}   ({n} klip, kb. {n * 5 if isinstance(n, int) else '?'} mp)")
+    while True:
+        s = input("\nSorszám (Enter = 1): ").strip() or "1"
+        if s.isdigit() and 1 <= int(s) <= len(lista):
+            return lista[int(s) - 1]
+        print("Érvénytelen sorszám.")
 
+
+class Megallitva(Exception):
+    pass
+
+
+def _kiir(szoveg, **_):
+    print(szoveg, flush=True)
+
+
+def generalas(c, nev, alap_mappa, jelent=_kiir, megallit=lambda: False):
+    """Egy teljes hosszú videó elkészítése. c = beállítások (ALAPERTELMEZES-sel kiegészítve),
+    nev = a kimeneti fájl neve, alap_mappa = ehhez képest értendő a relatív képútvonal.
+    jelent(szoveg, **adat) = haladásjelző, megallit() = True esetén a következő klip előtt leáll.
+    Visszatér: a kész mp4 útvonala."""
+    c = {**ALAPERTELMEZES, **c}
+    ffmpeg_utvonal()  # már az elején kiderüljön, ha hiányzik
     kep = Path(c["kep"])
     if not kep.is_absolute():
-        kep = feladat.parent / kep
+        kep = Path(alap_mappa) / kep
     futas = time.strftime("%Y%m%d_%H%M%S")
     kep_nev = f"svi_{futas}{kep.suffix}"
     shutil.copy(kep, COMFY / "input" / kep_nev)
@@ -152,14 +177,17 @@ def main():
     promptok = c["promptok"]
     n = c["klipek_szama"] or len(promptok)
     seed = c["seed"] if c["seed"] is not None else random.randint(0, 2**31)
-    print(f"{n} klip, {w}x{h}, ~{(n * (c['kocka_per_klip'] - 1) + 1) / c['fps']:.0f} mp, seed {seed}")
+    jelent(f"{n} klip, {w}x{h}, ~{(n * (c['kocka_per_klip'] - 1) + 1) / c['fps']:.0f} mp, seed {seed}",
+           tipus="start", n=n, meret=[w, h], seed=seed)
 
     elozo = None
     t0 = time.time()
     for i in range(n):
+        if megallit():
+            raise Megallitva(f"Leállítva {i} kész klip után.")
         p = promptok[min(i, len(promptok) - 1)]
         t = time.time()
-        print(f"[{i + 1}/{n}] {p[:90]}")
+        jelent(f"[{i + 1}/{n}] {p[:90]}", tipus="klip", i=i, n=n)
         futtat(graf(c, i, p, kep_nev, w, h, elozo, seed + i * 123, futas))
         # az elkészült latenst átmásoljuk az input mappába, a következő klip innen tölti be
         lat_dir = COMFY / "output" / "latents" / f"svi_{futas}"
@@ -167,7 +195,10 @@ def main():
         elozo = f"svi_{futas}_klip{i:03d}.latent"
         shutil.copy(legujabb, COMFY / "input" / elozo)
         eltelt = time.time() - t
-        print(f"      kész {eltelt:.0f} mp alatt, hátra kb. {eltelt * (n - i - 1) / 60:.0f} perc")
+        kockak = sorted((COMFY / "output" / f"svi_{futas}" / f"klip{i:03d}").glob("k_*.png"))
+        jelent(f"      kész {eltelt:.0f} mp alatt, hátra kb. {eltelt * (n - i - 1) / 60:.0f} perc",
+               tipus="klip_kesz", i=i, n=n, eltelt=eltelt, hatra=eltelt * (n - i - 1),
+               elonezet=str(kockak[-1]) if kockak else None)
 
     # összefűzés: a 2. kliptől az első kocka (a horgonykép) kimarad
     kepek = []
@@ -178,12 +209,25 @@ def main():
     ki_dir.mkdir(exist_ok=True)
     lista = ki_dir / f"_lista_{futas}.txt"
     lista.write_text("".join(f"file '{k.as_posix()}'\nduration {1 / c['fps']:.6f}\n" for k in kepek), encoding="utf-8")
-    ki = ki_dir / f"{feladat.stem}_{futas}.mp4"
+    ki = ki_dir / f"{nev}_{futas}.mp4"
+    jelent("Összefűzés...", tipus="osszefuzes")
     subprocess.run([ffmpeg_utvonal(), "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
                     "-r", str(c["fps"]), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "17", str(ki)], check=True)
     lista.unlink()
-    (ki_dir / f"{feladat.stem}_{futas}.json").write_text(json.dumps({**c, "seed": seed, "meret": [w, h]}, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"KÉSZ: {ki}  ({len(kepek)} kocka, {len(kepek) / c['fps']:.1f} mp, {(time.time() - t0) / 60:.1f} perc)")
+    (ki_dir / f"{nev}_{futas}.json").write_text(json.dumps({**c, "seed": seed, "meret": [w, h]}, ensure_ascii=False, indent=1), encoding="utf-8")
+    jelent(f"KÉSZ: {ki}  ({len(kepek)} kocka, {len(kepek) / c['fps']:.1f} mp, {(time.time() - t0) / 60:.1f} perc)",
+           tipus="kesz", video=str(ki))
+    return ki
+
+
+def main():
+    feladat = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else feladat_valaszt()
+    c = json.loads(feladat.read_text(encoding="utf-8"))
+    try:
+        keres("/system_stats")
+    except Exception:
+        raise SystemExit("A ComfyUI nem fut. Indítsd el: ComfyUI_inditas.bat, és várd meg, míg betölt.")
+    generalas(c, feladat.stem, feladat.parent)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hosszú videó készítő</title>
+<style>
+  :root{
+    --bg:#14161b; --panel:#1d2027; --panel2:#252932; --line:#323743; --text:#e7e9ee; --muted:#9aa1b0;
+    --accent:#e0a33b; --accent2:#f2c26b; --ok:#5cc28a; --err:#e06464; --r:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);background:#181a20}
+  header h1{font-size:19px;margin:0;font-weight:600;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:13px}
+  .pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .pill.on{color:var(--ok);border-color:#2f5d45}
+  .pill.off{color:var(--err);border-color:#5d2f2f}
+  header .right{margin-left:auto;display:flex;gap:8px}
+  main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;padding:18px 22px;max-width:1500px;margin:0 auto}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:18px}
+  h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:9px;font-weight:600}
+  h2 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#1a1300;font-size:12px;font-weight:700}
+  label{display:block;color:var(--muted);font-size:13px;margin:10px 0 5px}
+  input,textarea,select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  textarea{resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 14px}
+  button:hover{border-color:var(--accent)}
+  button.fo{background:var(--accent);color:#1a1300;border-color:var(--accent);font-weight:600}
+  button.fo:hover{background:var(--accent2)}
+  button.veszely{border-color:#6b3434;color:#f0a0a0}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .sor{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .racs2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .racs3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .halvany{color:var(--muted);font-size:13px}
+  #ejto{border:2px dashed var(--line);border-radius:var(--r);min-height:190px;display:grid;place-items:center;text-align:center;cursor:pointer;position:relative;overflow:hidden;background:#181b21}
+  #ejto.rajta{border-color:var(--accent);background:#221e15}
+  #ejto img{max-width:100%;max-height:340px;display:block}
+  #ejto .tipp{color:var(--muted);padding:20px}
+  .modok{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mod{border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--panel2)}
+  .mod.val{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .mod b{display:block}
+  .mod span{color:var(--muted);font-size:12.5px}
+  .prompt{display:grid;grid-template-columns:86px 1fr 34px;gap:8px;align-items:start;margin-bottom:8px}
+  .prompt .ido{color:var(--accent2);font-size:12.5px;padding-top:9px;font-variant-numeric:tabular-nums}
+  .prompt textarea{min-height:58px}
+  .prompt button{padding:6px 0}
+  details{margin-top:6px}
+  summary{cursor:pointer;color:var(--muted)}
+  .becsles{font-size:14px;color:var(--muted)}
+  .becsles b{color:var(--text)}
+  .sav{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .sav i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s}
+  #allapotSzoveg{font-size:16px;font-weight:600;margin:4px 0 8px}
+  #elonezet{width:100%;border-radius:8px;margin-top:10px;display:none;background:#000}
+  #naplo{background:#111317;border:1px solid var(--line);border-radius:8px;padding:8px 10px;height:170px;overflow:auto;font:12.5px/1.5 Consolas,monospace;color:#b9bfcc;white-space:pre-wrap;margin-top:10px}
+  #lejatszo{width:100%;border-radius:8px;background:#000;display:none;margin-bottom:10px}
+  .videok{max-height:300px;overflow:auto}
+  .video{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .video .nev{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .video .nev:hover{color:var(--accent2)}
+  .video button{padding:4px 9px;font-size:12.5px}
+  .uzenet{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;display:none}
+  .uzenet.hiba{display:block;background:#3a1f1f;border:1px solid #6b3434;color:#f3b4b4}
+  .uzenet.info{display:block;background:#1f2a3a;border:1px solid #34506b;color:#b4d0f3}
+  .forgo{display:inline-block;width:14px;height:14px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:f 1s linear infinite;vertical-align:-2px}
+  @keyframes f{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Hosszú videó készítő</h1>
+    <div class="sub">Wan 2.2 + Stable Video Infinity – egy képből perces videó, helyi géppel</div>
+  </div>
+  <div class="right">
+    <span id="pComfy" class="pill">ComfyUI …</span>
+    <span id="pOllama" class="pill">Ollama …</span>
+  </div>
+</header>
+
+<main>
+<div>
+  <section>
+    <h2><span class="n">1</span>Kezdőkép</h2>
+    <div id="ejto" tabindex="0">
+      <div class="tipp">Húzd ide a képet, vagy kattints a tallózáshoz<br><span class="halvany">png, jpg, webp</span></div>
+    </div>
+    <input type="file" id="fajl" accept="image/*" hidden>
+    <div class="sor" style="margin-top:10px">
+      <span id="kepInfo" class="halvany">Nincs kép kiválasztva.</span>
+      <span style="margin-left:auto"></span>
+      <select id="betolt" style="width:auto;max-width:280px"><option value="">Mentett feladat betöltése…</option></select>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Mi történjen?</h2>
+    <textarea id="tema" rows="3" placeholder="Pár mondatban, magyarul is lehet. Pl.: A kislány talál egy plüss unikornist, megmutatja a kamerának, aztán táncol vele."></textarea>
+    <div class="racs2">
+      <div>
+        <label>Hossz (másodperc)</label>
+        <input id="hossz" type="number" min="5" max="600" step="5" value="30">
+      </div>
+      <div>
+        <label>Név (a fájl neve)</label>
+        <input id="nev" placeholder="pl. unikornis_tanc">
+      </div>
+    </div>
+    <label>Mód</label>
+    <div class="modok">
+      <div class="mod val" data-cfg="1.0"><b>Gyors</b><span>~2,5 perc / 5 mp videó</span></div>
+      <div class="mod" data-cfg="1.5"><b>Minőségi</b><span>pontosabb szövegkövetés, negatív prompt hat · ~2× lassabb</span></div>
+    </div>
+    <div class="sor" style="margin-top:14px">
+      <button id="btnIr" class="fo">✨ Promptok megírása AI-val</button>
+      <span id="irAllapot" class="halvany"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>Klipenkénti promptok <span class="halvany" style="font-weight:400">(angolul a legjobb · 1 sor = 5 mp)</span></h2>
+    <div id="promptok"></div>
+    <div class="sor">
+      <button id="btnUj">+ Új klip</button>
+      <span class="halvany">Tipp: a külsőt a kép adja, a prompt a mozgást és a kamerát írja le.</span>
+    </div>
+    <details>
+      <summary>Haladó beállítások</summary>
+      <div class="racs3">
+        <div><label>Seed (üres = véletlen)</label><input id="seed" type="number" placeholder="véletlen"></div>
+        <div><label>Felbontás</label>
+          <select id="terulet">
+            <option value="399360">Normál (~832×480)</option>
+            <option value="230400">Kisebb, gyorsabb (~640×360)</option>
+            <option value="589824">Nagyobb, lassabb (~1024×576)</option>
+          </select></div>
+        <div><label>LightX2V erősség (high / low)</label>
+          <div class="sor"><input id="lxh" type="number" step="0.1" min="0" max="1.5" value="0.5" style="width:48%"><input id="lxl" type="number" step="0.1" min="0" max="1.5" value="1.0" style="width:48%"></div></div>
+      </div>
+      <label>Kerülendő dolgok (negatív prompt kiegészítés, csak minőségi módban hat)</label>
+      <input id="negativ" placeholder="pl. modern clothing, ladder, text, watermark">
+    </details>
+  </section>
+
+  <section>
+    <div class="sor">
+      <button id="btnIndit" class="fo" style="padding:11px 22px;font-size:16px">▶ Videó készítése</button>
+      <span id="becsles" class="becsles"></span>
+    </div>
+    <div id="uzenet" class="uzenet"></div>
+  </section>
+</div>
+
+<div>
+  <section>
+    <h2>Állapot</h2>
+    <div id="allapotSzoveg">Várakozik</div>
+    <div class="sav"><i id="sav"></i></div>
+    <div class="sor" style="margin-top:8px">
+      <span id="allapotRészlet" class="halvany"></span>
+      <span style="margin-left:auto"></span>
+      <button id="btnStop" class="veszely" disabled>■ Leállítás</button>
+    </div>
+    <img id="elonezet" alt="az utolsó elkészült kocka">
+    <div id="naplo"></div>
+  </section>
+
+  <section>
+    <h2>Kész videók</h2>
+    <video id="lejatszo" controls></video>
+    <div id="videok" class="videok"></div>
+    <div class="sor" style="margin-top:10px"><button id="btnMappa">📂 Kimenet mappa megnyitása</button></div>
+  </section>
+</div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const FPS = 16, KOCKA = 81;
+let kep = null, cfg = 1.0, rendszer = null, utolsoVideo = null, feladatok = [];
+
+async function api(ut, adat, opts = {}) {
+  const r = await fetch(ut, adat === undefined ? {} : {method: "POST", body: opts.nyers ? adat : JSON.stringify(adat), headers: opts.fejlec || {"Content-Type": "application/json"}});
+  const j = await r.json().catch(() => ({hiba: "Érvénytelen válasz"}));
+  if (!r.ok || j.hiba) throw new Error(j.hiba || r.statusText);
+  return j;
+}
+const fajlUrl = ut => "/fajl?ut=" + encodeURIComponent(ut) + "&t=" + Date.now();
+function uzen(szoveg, tipus = "hiba") { const u = $("#uzenet"); u.className = "uzenet " + tipus; u.textContent = szoveg; if (!szoveg) u.className = "uzenet"; }
+const klipszam = mp => Math.max(1, Math.ceil((mp * FPS - 1) / (KOCKA - 1)));
+const ekezetNelkul = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+/* ---------- kép ---------- */
+const ejto = $("#ejto");
+ejto.onclick = () => $("#fajl").click();
+ejto.onkeydown = e => { if (e.key === "Enter") $("#fajl").click(); };
+$("#fajl").onchange = e => e.target.files[0] && feltolt(e.target.files[0]);
+["dragenter", "dragover"].forEach(t => ejto.addEventListener(t, e => { e.preventDefault(); ejto.classList.add("rajta"); }));
+["dragleave", "drop"].forEach(t => ejto.addEventListener(t, e => { e.preventDefault(); ejto.classList.remove("rajta"); }));
+ejto.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) feltolt(f); });
+
+async function feltolt(f) {
+  if (!f.type.startsWith("image/")) return uzen("Ez nem kép.");
+  $("#kepInfo").innerHTML = '<span class="forgo"></span> feltöltés…';
+  try {
+    const j = await api("/api/kep", f, {nyers: true, fejlec: {"X-Fajlnev": encodeURIComponent(f.name)}});
+    kepBeallit(j.ut, j.w, j.h);
+  } catch (e) { uzen("Képfeltöltés: " + e.message); $("#kepInfo").textContent = "Nincs kép kiválasztva."; }
+}
+function kepBeallit(ut, w, h) {
+  kep = ut;
+  ejto.innerHTML = `<img src="${fajlUrl(ut)}" alt="kezdőkép">`;
+  const fajlnev = ut.split(/[\\/]/).pop();
+  $("#kepInfo").textContent = fajlnev + (w ? ` · ${w}×${h}` : "");
+  if (!$("#nev").value) $("#nev").value = ekezetNelkul(fajlnev.replace(/\.[^.]+$/, "")).replace(/[^\w]+/g, "_").slice(0, 30);
+  becsles();
+}
+
+/* ---------- mód ---------- */
+document.querySelectorAll(".mod").forEach(m => m.onclick = () => {
+  document.querySelectorAll(".mod").forEach(x => x.classList.remove("val"));
+  m.classList.add("val"); cfg = parseFloat(m.dataset.cfg); becsles();
+});
+function modBeallit(c) { document.querySelectorAll(".mod").forEach(m => m.classList.toggle("val", parseFloat(m.dataset.cfg) === (c >= 1.25 ? 1.5 : 1.0))); cfg = c; }
+
+/* ---------- promptok ---------- */
+function promptLista() { return [...document.querySelectorAll(".prompt textarea")].map(t => t.value); }
+function promptRajzol(lista) {
+  const d = $("#promptok"); d.innerHTML = "";
+  lista.forEach((p, i) => {
+    const s = document.createElement("div"); s.className = "prompt";
+    s.innerHTML = `<div class="ido">${i + 1}. · ${i * 5}–${i * 5 + 5} mp</div><textarea rows="2"></textarea><button title="Klip törlése">✕</button>`;
+    s.querySelector("textarea").value = p;
+    s.querySelector("textarea").oninput = becsles;
+    s.querySelector("button").onclick = () => { const l = promptLista(); l.splice(i, 1); promptRajzol(l.length ? l : [""]); hosszSzinkron(); };
+    d.appendChild(s);
+  });
+  becsles();
+}
+function hosszSzinkron() { $("#hossz").value = promptLista().length * 5; becsles(); }
+$("#btnUj").onclick = () => { const l = promptLista(); l.push(""); promptRajzol(l); hosszSzinkron(); };
+$("#hossz").onchange = () => {
+  const n = klipszam(parseInt($("#hossz").value) || 5); const l = promptLista();
+  while (l.length < n) l.push(l.length ? l[l.length - 1] : ""); l.length = n; promptRajzol(l);
+};
+
+function becsles() {
+  const n = promptLista().filter(p => p.trim()).length || klipszam(parseInt($("#hossz").value) || 5);
+  const perc = n * (cfg >= 1.25 ? 280 : 148) / 60;
+  const mp = (n * (KOCKA - 1) + 1) / FPS;
+  $("#becsles").innerHTML = `<b>${n} klip</b> · kb. <b>${Math.round(mp)} mp</b> videó · becsült idő: <b>${perc < 60 ? Math.round(perc) + " perc" : (perc / 60).toFixed(1) + " óra"}</b>`;
+}
+
+$("#btnIr").onclick = async () => {
+  uzen("");
+  if (!kep) return uzen("Előbb válassz kezdőképet.");
+  if (!$("#tema").value.trim()) return uzen("Írd le, mi történjen a videóban.");
+  const n = klipszam(parseInt($("#hossz").value) || 5);
+  $("#btnIr").disabled = true; $("#irAllapot").innerHTML = '<span class="forgo"></span> a helyi AI írja a promptokat (fél–egy perc)…';
+  try {
+    const j = await api("/api/promptok", {tema: $("#tema").value, n, kep});
+    promptRajzol(j.promptok); $("#irAllapot").textContent = "Kész – nézd át, írd át nyugodtan.";
+  } catch (e) { $("#irAllapot").textContent = ""; uzen("Promptírás: " + e.message + " – a promptokat kézzel is beírhatod."); }
+  $("#btnIr").disabled = false;
+};
+
+/* ---------- mentett feladat ---------- */
+async function feladatokBetolt() {
+  feladatok = await api("/api/feladatok").catch(() => []);
+  const s = $("#betolt"); s.innerHTML = '<option value="">Mentett feladat betöltése…</option>';
+  feladatok.forEach((f, i) => s.insertAdjacentHTML("beforeend", `<option value="${i}">${f.nev} (${f.n} klip)</option>`));
+}
+$("#betolt").onchange = e => {
+  const f = feladatok[e.target.value]; if (!f) return; const d = f.adat;
+  if (d.kep) kepBeallit(d.kep);
+  $("#tema").value = d.tema || ""; $("#nev").value = f.nev;
+  modBeallit(d.cfg || 1.0);
+  $("#seed").value = d.seed ?? "";
+  if (d.terulet) $("#terulet").value = String(d.terulet);
+  if (d.lightx2v_high != null) $("#lxh").value = d.lightx2v_high;
+  if (d.lightx2v_low != null) $("#lxl").value = d.lightx2v_low;
+  const alapNeg = (d.negativ || "").split("倒着走")[1] || "";
+  $("#negativ").value = alapNeg.replace(/^\s*,\s*/, "");
+  const p = d.promptok || [""]; const n = d.klipek_szama || p.length;
+  const l = [...p]; while (l.length < n) l.push(l[l.length - 1]); l.length = n;
+  promptRajzol(l); hosszSzinkron(); e.target.value = "";
+};
+
+/* ---------- indítás / leállítás ---------- */
+$("#btnIndit").onclick = async () => {
+  uzen("");
+  const promptok = promptLista().filter(p => p.trim());
+  if (!kep) return uzen("Válassz kezdőképet.");
+  if (!promptok.length) return uzen("Nincs egy prompt sem. Írasd meg az AI-val, vagy írd be kézzel.");
+  try {
+    await api("/api/inditas", {kep, tema: $("#tema").value, promptok, cfg, nev: $("#nev").value || "video",
+      seed: $("#seed").value, terulet: $("#terulet").value, lightx2v_high: $("#lxh").value, lightx2v_low: $("#lxl").value,
+      negativ_extra: $("#negativ").value});
+    uzen("Elindult. A haladást a jobb oldalon látod; a feladat el is mentődött.", "info");
+    feladatokBetolt();
+  } catch (e) { uzen(e.message); }
+};
+$("#btnStop").onclick = async () => { if (confirm("Biztosan leállítod? Az eddig kész klipek megmaradnak a ComfyUI output mappájában, de videó nem készül.")) await api("/api/leallitas", {}); };
+$("#btnMappa").onclick = () => api("/api/megnyit", {mappa: true});
+
+/* ---------- állapot ---------- */
+const FAZIS = {tetlen: "Várakozik", indul: "Indul…", comfy: "A ComfyUI indul…", general: "Generálás", osszefuzes: "Összefűzés…", kesz: "Kész ✔", hiba: "Hiba", leallitva: "Leállítva"};
+let elozoElonezet = null;
+async function allapotFrissit() {
+  try {
+    const a = await api("/api/allapot");
+    const pct = a.n ? Math.round(100 * a.kesz / a.n) : 0;
+    $("#sav").style.width = (a.fazis === "kesz" ? 100 : pct) + "%";
+    let sz = FAZIS[a.fazis] || a.fazis;
+    if (a.fazis === "general") sz += ` – ${a.aktualis || a.kesz + 1}. klip / ${a.n}`;
+    $("#allapotSzoveg").textContent = (a.nev && a.fazis !== "tetlen" ? a.nev + ": " : "") + sz;
+    let r = "";
+    if (a.fut && a.hatra != null) r = `hátra kb. ${Math.max(1, Math.round(a.hatra / 60))} perc`;
+    if (a.fut && a.kezdes) r += (r ? " · " : "") + `eltelt ${Math.round((Date.now() / 1000 - a.kezdes) / 60)} perc`;
+    if (a.fazis === "hiba") r = a.hiba;
+    $("#allapotRészlet").textContent = r;
+    $("#btnStop").disabled = !a.fut; $("#btnIndit").disabled = a.fut;
+    const n = $("#naplo"); const lent = n.scrollTop + n.clientHeight >= n.scrollHeight - 5;
+    n.textContent = a.log.join("\n"); if (lent) n.scrollTop = n.scrollHeight;
+    if (a.elonezet && a.elonezet !== elozoElonezet) { elozoElonezet = a.elonezet; const img = $("#elonezet"); img.src = fajlUrl(a.elonezet); img.style.display = "block"; }
+    if (a.video && a.video !== utolsoVideo) { utolsoVideo = a.video; videokBetolt(); lejatszik(a.video); }
+  } catch (e) { $("#allapotSzoveg").textContent = "A felület szervere nem válaszol – fut még a fekete ablak?"; }
+}
+async function rendszerFrissit() {
+  try {
+    rendszer = await api("/api/rendszer");
+    $("#pComfy").className = "pill " + (rendszer.comfy ? "on" : "off"); $("#pComfy").textContent = "ComfyUI " + (rendszer.comfy ? "fut" : "nem fut (indításkor elindul)");
+    $("#pOllama").className = "pill " + (rendszer.ollama ? "on" : "off"); $("#pOllama").textContent = "Ollama " + (rendszer.ollama ? "elérhető" : "nem fut (kézi prompt)");
+  } catch (e) {}
+}
+
+/* ---------- videók ---------- */
+function lejatszik(ut) { const v = $("#lejatszo"); v.src = fajlUrl(ut); v.style.display = "block"; v.play().catch(() => {}); }
+async function videokBetolt() {
+  const l = await api("/api/kimenetek").catch(() => []);
+  $("#videok").innerHTML = l.length ? "" : '<div class="halvany">Még nincs kész videó.</div>';
+  l.forEach(v => {
+    const s = document.createElement("div"); s.className = "video";
+    s.innerHTML = `<span class="nev" title="Lejátszás itt">▶ ${v.nev}</span><span class="halvany">${v.ido} · ${v.meret_mb} MB</span><button title="Megnyitás a lejátszóban">Megnyit</button>`;
+    s.querySelector(".nev").onclick = () => lejatszik(v.ut);
+    s.querySelector("button").onclick = () => api("/api/megnyit", {ut: v.ut});
+    $("#videok").appendChild(s);
+  });
+}
+
+promptRajzol(Array(klipszam(30)).fill(""));
+rendszerFrissit(); feladatokBetolt(); videokBetolt(); allapotFrissit();
+setInterval(allapotFrissit, 2000); setInterval(rendszerFrissit, 15000);
+</script>
+</body>
+</html>

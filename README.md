@@ -31,7 +31,23 @@ Sebesség (RTX 5070 Ti, gyors mód): **5 mp videó ≈ 2,5 perc**, 1 perc videó
 
 ## Használat
 
-**Video_keszito.bat** – dupla kattintás, és a varázsló végigvezet:
+### Grafikus felület (ajánlott)
+
+**Video_GUI.bat** – dupla kattintás, és a böngészőben megnyílik a felület (http://127.0.0.1:8190, csak a saját gépedről érhető el):
+
+1. **Kezdőkép** – húzd a képet a keretbe (vagy kattints és tallózz)
+2. **Mi történjen** – pár mondat magyarul, hossz másodpercben, gyors vagy minőségi mód
+3. **✨ Promptok megírása AI-val** – a helyi Ollama klipenként megírja az angol promptokat; mindegyik átírható, törölhető, újak adhatók hozzá
+4. **▶ Videó készítése** – jobb oldalt látszik a haladás, a hátralévő idő és a legutóbb elkészült kocka; leállítható
+5. A kész videó ott helyben lejátszható; a korábbiak listából is
+
+Haladó beállítások: seed, felbontás, LightX2V-erősség, kerülendő dolgok (negatív prompt).
+A korábbi feladatok a „Mentett feladat betöltése” listából visszatölthetők és módosíthatók.
+A fekete szerverablakot hagyd nyitva, amíg a felületet használod.
+
+### Parancssoros varázsló
+
+**Video_keszito.bat** – ugyanez kérdés-felelet formában, a konzolban:
 
 1. **Kezdőkép** – húzd rá a képet az ablakra, Enter
 2. **Mi történjen** – pár mondat, magyarul is lehet
@@ -40,7 +56,7 @@ Sebesség (RTX 5070 Ti, gyors mód): **5 mp videó ≈ 2,5 perc**, 1 perc videó
 
 Ezután az AI megírja a promptokat; megnézheted, újraírathatod vagy egy-egy sort átírhatsz, majd Enter és indul.
 A kész videó a `kimenet\` mappába kerül és magától megnyílik. A feladat a `feladatok\` mappába mentődik:
-újrafuttatáshoz húzd a json-t a **Hosszu_video.bat**-ra.
+újrafuttatáshoz húzd a json-t a **Hosszu_video.bat**-ra, vagy indítsd üresen és válassz a listából.
 
 A varázsló magától elindítja a ComfyUI-t, ha nem fut (külön ablakban; a végén bezárhatod).
 
@@ -73,7 +89,8 @@ Minden fájl részletes leírása magyarul és angolul: [FAJLOK_FILES.md](FAJLOK
 
 | Fájl | Mire jó |
 |---|---|
-| `Video_keszito.bat` / `video_keszito.py` | Varázsló |
+| `Video_GUI.bat` / `gui_szerver.py` / `gui\index.html` | Grafikus felület a böngészőben |
+| `Video_keszito.bat` / `video_keszito.py` | Parancssoros varázsló |
 | `Hosszu_video.bat` / `hosszu_video.py` | A motor; feladatfájlból generál |
 | `ComfyUI_inditas.bat` | A ComfyUI kézi indítása (böngészőben: http://127.0.0.1:8188) |
 | `telepito.bat` / `telepito.ps1` | Telepítő |

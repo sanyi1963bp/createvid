@@ -24,3 +24,6 @@ __pycache__/
 
 # Belső tesztfájlok
 proba_*.json
+
+# A GUI-ba feltöltött képek
+kepek/
